@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Training outputs
+cnn_policy/checkpoints/
+cnn_policy/logs/
+*.pth
+*.pt
+
+# Dataset (too large for git)
+dataset/
+*.h5
+*.csv
+*.pgn
+*.zip
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+*.bak
+*~
+
+# Archives
+*.tar.gz
+*.zip
