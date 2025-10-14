@@ -73,21 +73,24 @@ def decode_board_from_h5(row) -> str:
     # The board_position is encoded - need to decode
     # This requires understanding their exact encoding scheme
     
-    # Piece vocabulary (typical encoding):
-    # 0 = empty, 1-6 = white pieces (P,N,B,R,Q,K), 7-12 = black pieces
+    # Piece vocabulary (VERIFIED from LE22ct H5 file):
+    # 0 = empty
+    # Even numbers (2,4,6,8,10,12) = BLACK pieces
+    # Odd numbers (3,5,7,9,11,13) = WHITE pieces
+    # Order: P, R, N, B, Q, K (not the typical P,N,B,R,Q,K!)
     piece_map = {
-        1: (chess.PAWN, chess.WHITE),
-        2: (chess.KNIGHT, chess.WHITE),
-        3: (chess.BISHOP, chess.WHITE),
-        4: (chess.ROOK, chess.WHITE),
-        5: (chess.QUEEN, chess.WHITE),
-        6: (chess.KING, chess.WHITE),
-        7: (chess.PAWN, chess.BLACK),
-        8: (chess.KNIGHT, chess.BLACK),
-        9: (chess.BISHOP, chess.BLACK),
-        10: (chess.ROOK, chess.BLACK),
-        11: (chess.QUEEN, chess.BLACK),
+        2: (chess.PAWN, chess.BLACK),
+        3: (chess.PAWN, chess.WHITE),
+        4: (chess.ROOK, chess.BLACK),
+        5: (chess.ROOK, chess.WHITE),
+        6: (chess.KNIGHT, chess.BLACK),
+        7: (chess.KNIGHT, chess.WHITE),
+        8: (chess.BISHOP, chess.BLACK),
+        9: (chess.BISHOP, chess.WHITE),
+        10: (chess.QUEEN, chess.BLACK),
+        11: (chess.QUEEN, chess.WHITE),
         12: (chess.KING, chess.BLACK),
+        13: (chess.KING, chess.WHITE),
     }
     
     try:
@@ -103,21 +106,22 @@ def decode_board_from_h5(row) -> str:
         # Set turn
         board.turn = chess.WHITE if row['turn'] == 0 else chess.BLACK
         
-        # Set castling rights
+        # Set castling rights (use direct indexing for numpy structured arrays)
         board.castling_rights = 0
-        if row.get('white_kingside_castling_rights', 0):
+        if row['white_kingside_castling_rights']:
             board.castling_rights |= chess.BB_H1
-        if row.get('white_queenside_castling_rights', 0):
+        if row['white_queenside_castling_rights']:
             board.castling_rights |= chess.BB_A1
-        if row.get('black_kingside_castling_rights', 0):
+        if row['black_kingside_castling_rights']:
             board.castling_rights |= chess.BB_H8
-        if row.get('black_queenside_castling_rights', 0):
+        if row['black_queenside_castling_rights']:
             board.castling_rights |= chess.BB_A8
         
         return board.fen()
         
     except Exception as e:
-        # Fallback to starting position
+        # Rare fallback - should almost never happen now
+        print(f"Warning: Failed to decode position at row, using starting position. Error: {e}")
         return chess.Board().fen()
 
 
@@ -159,11 +163,13 @@ class ChessPolicyDatasetH5Proper(Dataset):
         # Open H5 file (keep it open for random access)
         self.h5_file = h5py.File(self.h5_path, 'r', swmr=True)
         
-        # Get encoded table
-        if 'encoded' not in self.h5_file:
-            raise ValueError(f"'encoded' table not found in H5 file!")
-        
-        self.data = self.h5_file['encoded']
+        # Get encoded table (try both possible names)
+        if 'encoded_data' in self.h5_file:
+            self.data = self.h5_file['encoded_data']
+        elif 'encoded' in self.h5_file:
+            self.data = self.h5_file['encoded']
+        else:
+            raise ValueError(f"'encoded_data' or 'encoded' table not found in H5 file! Available: {list(self.h5_file.keys())}")
         
         # Determine split indices
         total_size = len(self.data)
@@ -201,29 +207,9 @@ class ChessPolicyDatasetH5Proper(Dataset):
         # Read from H5
         row = self.data[actual_idx]
         
-        # Extract first move (this is what CT-EFT-20 uses for policy!)
-        moves_array = row['moves']
-        
-        if len(moves_array) > 0:
-            first_move_idx = moves_array[0]
-            
-            # Decode move index to UCI
-            if first_move_idx < len(UCI_LABELS):
-                move_uci = UCI_LABELS[first_move_idx]
-            else:
-                # Fallback
-                move_uci = "e2e4"
-        else:
-            move_uci = "e2e4"
-        
-        # Parse move to get from/to squares
-        try:
-            move = chess.Move.from_uci(move_uci)
-            from_square = move.from_square
-            to_square = move.to_square
-        except:
-            from_square = 12  # e2
-            to_square = 28     # e4
+        # This H5 file already has from_square and to_square directly!
+        from_square = int(row['from_square'])
+        to_square = int(row['to_square'])
         
         # Decode board position to FEN
         fen = decode_board_from_h5(row)
