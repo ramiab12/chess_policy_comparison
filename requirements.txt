@@ -20,7 +20,6 @@ tqdm>=4.65.0
 # Evaluation
 requests>=2.31.0
 
-# For CT-EFT-20 compatibility (optional)
-# tables>=3.8.0
-# ipython>=8.0.0
+# For Transformer (CT-EFT-20 replica)
+tables>=3.8.0  # PyTables for H5 loading
 
