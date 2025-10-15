@@ -13,18 +13,25 @@ Scientifically compare CNN vs Transformer architectures for chess move predictio
 
 ### **Status**
 - ✅ CNN trained (50.81% accuracy at step 55K, beats CT-EFT-20 baseline)
-- ⏳ Transformer ready to train (CT-EFT-20 replica, 325K steps)
-- ✅ All code tested and verified
+- ⏳ Transformer ready to train (CT-EFT-20 replica, 100K steps)
+- ✅ All code tested and optimized for A6000
 - ✅ Git repository: https://github.com/ramiab12/chess_policy_comparison
+- ✅ Switched from H100 to A6000 for cost efficiency
 
 ---
 
 ## 🎯 CURRENT TASK
 
-**TRAIN THE TRANSFORMER MODEL ON RUNPOD H100 GPU**
+**TRAIN THE TRANSFORMER MODEL ON RUNPOD RTX A6000 GPU**
 
 The transformer model is an **EXACT REPLICA** of CT-EFT-20 (from chess-transformers paper).
 It must be trained with IDENTICAL settings to ensure fair comparison with CNN.
+
+**Why A6000 instead of H100?**
+- 19M parameter model is too small to utilize H100 (only 5-10% GPU usage)
+- A6000 provides same speed (~0.50-0.55 steps/sec) at **82% lower cost**
+- H100: $2.69/hr → A6000: $0.49/hr
+- Estimated savings: $121 for 100K steps!
 
 ---
 
@@ -44,9 +51,9 @@ chess_policy_comparison/
 │       └── checkpoint_step_105000.pth  (213 MB, final)
 │
 ├── transformer_policy/            # ⏳ READY TO TRAIN
-│   ├── config.py                  # Hyperparameters (325K steps, H100 optimized)
+│   ├── config.py                  # Hyperparameters (100K steps, A6000 optimized)
 │   ├── model.py                   # ChessTransformerEncoderFT (~19M params)
-│   ├── dataset.py                 # ChessDatasetFT (H5 loader, uses PyTables)
+│   ├── dataset.py                 # ChessDatasetFT (H5 loader, uses h5py)
 │   ├── train.py                   # Training loop (Vaswani LR, label smoothing)
 │   └── inference.py               # Move prediction
 │
@@ -95,10 +102,10 @@ D_VALUES = 64
 D_INNER = 2048
 DROPOUT = 0.1
 
-# Training (H100 Optimized)
-BATCH_SIZE = 2048           # 4x larger than baseline (was 512)
-BATCHES_PER_STEP = 1        # No gradient accumulation (was 4)
-N_STEPS = 325_000           # 50 epochs (was 100K)
+# Training (A6000 Optimized)
+BATCH_SIZE = 512            # Optimal for A6000 (tested fastest)
+BATCHES_PER_STEP = 4        # Gradient accumulation for effective batch 2048
+N_STEPS = 100_000           # Match CT-EFT-20 baseline (fair comparison)
 WARMUP_STEPS = 8_000        # IDENTICAL to CT-EFT-20
 
 # Learning Rate (Vaswani Schedule)
@@ -112,10 +119,11 @@ Adam(β1=0.9, β2=0.98, ε=1e-9)
 Label Smoothed Cross-Entropy (ε=0.1)
 Total Loss = From-Loss + To-Loss
 
-# H100 Optimizations
+# A6000 Optimizations
 Mixed Precision: BF16 (autocast + GradScaler)
 Num Workers: 8
 Pin Memory: True
+Expected Speed: ~0.50-0.55 steps/sec
 ```
 
 ### **Dataset**
@@ -147,8 +155,8 @@ Pin Memory: True
 
 ### **Step 1: Setup RunPod Pod**
 ```bash
-# GPU: H100 SXM (80 GB VRAM)
-# Cost: $2.69/hr
+# GPU: RTX A6000 (48 GB VRAM)
+# Cost: $0.49/hr
 # Disk: 80 GB minimum
 
 # Clone repository
@@ -260,15 +268,16 @@ Training will notify when early stopping is triggered:
 ### **Transformer Target**
 - **Goal**: Match or beat CNN performance (>50.81%)
 - **CT-EFT-20 Baseline**: ~48% (from paper, 100K steps)
-- **Our Training**: 325K steps (50 epochs)
-- **Expected**: Likely 50-52% based on extended training
+- **Our Training**: 100K steps (fair comparison with CT-EFT-20)
+- **Expected**: ~48-50% based on CT-EFT-20 paper results
 
 ### **Training Time Estimate**
-- Total steps: 325,000
-- Batch size: 2048
-- H100 with BF16: ~2x speedup
-- **Estimated time**: 10-12 hours (vs ~20 hours without optimizations)
-- **Cost**: 10-12 hours × $2.69/hr = **~$27-32**
+- Total steps: 100,000
+- Batch size: 512 (effective 2048 with grad accum)
+- A6000 with BF16: ~0.50-0.55 steps/sec
+- **Estimated time**: ~50-55 hours (~2.1-2.3 days)
+- **Cost**: ~52 hours × $0.49/hr = **~$25-27**
+- **Comparison**: H100 would cost $140+ for same training!
 
 ---
 
@@ -292,7 +301,7 @@ ls -lh dataset/raw/LE22ct/LE22ct.h5
 
 ### **Model**
 ```bash
-python -c "from transformer_policy.model import ChessTransformerEncoderFT; from transformer_policy.config import TransformerConfig; import torch; model = ChessTransformerEncoderFT(TransformerConfig).cuda(); print('✅ Model on GPU')"
+python -c "from transformer_policy.model import ChessTransformerEncoderFT; from transformer_policy.config import TransformerConfig; import torch; model = ChessTransformerEncoderFT(TransformerConfig).cuda(); print('✅ Model on GPU'); print(f'Parameters: {sum(p.numel() for p in model.parameters()):,}')"
 ```
 
 ### **Disk Space**

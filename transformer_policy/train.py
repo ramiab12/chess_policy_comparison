@@ -153,13 +153,13 @@ class Trainer:
             split='val'
         )
         
+        # Configure DataLoader (matching CNN setup)
         self.train_loader = DataLoader(
             self.train_dataset,
             batch_size=config.BATCH_SIZE,
             shuffle=True,
             num_workers=config.NUM_WORKERS,
-            pin_memory=config.PIN_MEMORY,
-            prefetch_factor=config.PREFETCH_FACTOR
+            pin_memory=config.PIN_MEMORY
         )
         
         self.val_loader = DataLoader(
@@ -167,8 +167,7 @@ class Trainer:
             batch_size=config.BATCH_SIZE,
             shuffle=False,
             num_workers=config.NUM_WORKERS,
-            pin_memory=config.PIN_MEMORY,
-            prefetch_factor=config.PREFETCH_FACTOR
+            pin_memory=config.PIN_MEMORY
         )
         
         print(f"   Train batches: {len(self.train_loader):,}")
@@ -346,9 +345,14 @@ class Trainer:
         
         self.train_iter = iter(self.train_loader)
         
+        # For tracking steps/sec
+        step_times = []
+        last_log_time = time.time()
+        
         try:
             with tqdm(total=Config.N_STEPS, desc="Training") as pbar:
                 for step in range(1, Config.N_STEPS + 1):
+                    step_start = time.time()
                     self.current_step = step
                     
                     # Update learning rate (Vaswani schedule)
@@ -359,11 +363,20 @@ class Trainer:
                     # Train step
                     from_loss, to_loss, combined_loss = self.train_step()
                     
+                    # Track step time
+                    step_time = time.time() - step_start
+                    step_times.append(step_time)
+                    if len(step_times) > 100:
+                        step_times.pop(0)
+                    
                     # Update progress
                     pbar.update(1)
+                    avg_step_time = sum(step_times) / len(step_times)
+                    steps_per_sec = 1.0 / avg_step_time if avg_step_time > 0 else 0
                     pbar.set_postfix({
                         'loss': f'{combined_loss:.3f}',
-                        'lr': f'{current_lr:.6f}'
+                        'lr': f'{current_lr:.6f}',
+                        'step/s': f'{steps_per_sec:.2f}'
                     })
                     
                     # Log to TensorBoard
@@ -372,15 +385,50 @@ class Trainer:
                     self.writer.add_scalar('Loss/combined', combined_loss, step)
                     self.writer.add_scalar('LR', current_lr, step)
                     
+                    # Periodic updates every 1000 steps
+                    if step % 1000 == 0:
+                        elapsed = time.time() - self.start_time
+                        eta = (Config.N_STEPS - step) * avg_step_time
+                        elapsed_h, elapsed_m = int(elapsed // 3600), int((elapsed % 3600) // 60)
+                        eta_h, eta_m = int(eta // 3600), int((eta % 3600) // 60)
+                        
+                        # Get GPU memory
+                        gpu_mem = torch.cuda.max_memory_allocated() / 1e9 if torch.cuda.is_available() else 0
+                        
+                        print(f"\n⏱️  Step {step:,}/{Config.N_STEPS:,} ({100*step/Config.N_STEPS:.1f}%)")
+                        print(f"   Loss: {combined_loss:.4f} | LR: {current_lr:.6f} | Speed: {steps_per_sec:.2f} steps/s")
+                        print(f"   Time: {elapsed_h}h{elapsed_m:02d}m | ETA: {eta_h}h{eta_m:02d}m | GPU: {gpu_mem:.1f}GB")
+                    
                     # Validate periodically
                     if step % 5000 == 0 or step == Config.N_STEPS:
                         from_acc, to_acc, move_acc = self.validate()
                         
-                        print(f"\n📊 Step {step:,}/{Config.N_STEPS:,}:")
-                        print(f"   From accuracy:  {from_acc:.2%}")
-                        print(f"   To accuracy:    {to_acc:.2%}")
-                        print(f"   Move accuracy:  {move_acc:.2%} (both correct)")
-                        print(f"   LR:             {current_lr:.6f}")
+                        # Calculate time info
+                        elapsed = time.time() - self.start_time
+                        eta = (Config.N_STEPS - step) * avg_step_time if step < Config.N_STEPS else 0
+                        elapsed_h, elapsed_m = int(elapsed // 3600), int((elapsed % 3600) // 60)
+                        eta_h, eta_m = int(eta // 3600), int((eta % 3600) // 60)
+                        
+                        print(f"\n{'='*70}")
+                        print(f"📊 VALIDATION - Step {step:,}/{Config.N_STEPS:,} ({100*step/Config.N_STEPS:.1f}%)")
+                        print(f"{'='*70}")
+                        print(f"   From accuracy:  {from_acc:.4f} ({from_acc*100:.2f}%)")
+                        print(f"   To accuracy:    {to_acc:.4f} ({to_acc*100:.2f}%)")
+                        print(f"   Move accuracy:  {move_acc:.4f} ({move_acc*100:.2f}%) ⭐ PRIMARY METRIC")
+                        print(f"   Combined loss:  {combined_loss:.4f}")
+                        print(f"   Learning rate:  {current_lr:.6f}")
+                        print(f"   Time elapsed:   {elapsed_h}h {elapsed_m}m")
+                        print(f"   ETA:            {eta_h}h {eta_m}m")
+                        print(f"   Speed:          {steps_per_sec:.2f} steps/sec")
+                        
+                        # Check against CNN baseline
+                        cnn_baseline = 0.5081
+                        if move_acc > cnn_baseline:
+                            diff = (move_acc - cnn_baseline) * 100
+                            print(f"   🎉 BEATS CNN by {diff:.2f}%!")
+                        else:
+                            diff = (cnn_baseline - move_acc) * 100
+                            print(f"   📊 CNN leads by {diff:.2f}%")
                         
                         # Log validation
                         self.writer.add_scalar('Accuracy/from', from_acc, step)
@@ -393,7 +441,8 @@ class Trainer:
                             'from_acc': from_acc,
                             'to_acc': to_acc,
                             'move_acc': move_acc,
-                            'lr': current_lr
+                            'lr': current_lr,
+                            'elapsed_hours': elapsed / 3600
                         })
                         
                         # Save CSV log
@@ -405,21 +454,23 @@ class Trainer:
                             self.best_val_accuracy = move_acc
                             self.best_step = step
                             self.patience_counter = 0
-                            print(f"   🎯 New best accuracy: {move_acc:.2%}")
+                            print(f"   🎯 NEW BEST ACCURACY: {move_acc*100:.2f}%")
                         else:
                             self.patience_counter += 1
                             print(f"   No improvement (patience: {self.patience_counter}/{Config.EARLY_STOPPING_PATIENCE})")
                         
                         # Early stopping check
                         if self.patience_counter >= Config.EARLY_STOPPING_PATIENCE:
-                            print(f"\n⚠️  Early stopping triggered!")
+                            print(f"\n   ⚠️  Early stopping triggered!")
                             print(f"   No improvement for {Config.EARLY_STOPPING_PATIENCE} validations")
-                            print(f"   Best accuracy: {self.best_val_accuracy:.2%} at step {self.best_step:,}")
-                            print(f"   You can stop training now or let it continue.")
+                            print(f"   Best accuracy: {self.best_val_accuracy*100:.2f}% at step {self.best_step:,}")
+                            print(f"   Continuing training... (stop with Ctrl+C if desired)")
                         
                         # Save checkpoint
+                        print(f"\n   💾 Saving checkpoint...")
                         self.save_checkpoint(f'checkpoint_step_{step}.pth')
-                        print()
+                        print(f"   ✅ Checkpoint saved: checkpoint_step_{step}.pth")
+                        print(f"{'='*70}\n")
         
         except KeyboardInterrupt:
             print("\n⚠️  Training interrupted!")

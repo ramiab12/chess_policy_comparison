@@ -89,10 +89,10 @@ class TransformerConfig:
     DROPOUT = 0.1          # Dropout probability
     BOARD_STATUS_LENGTH = 70  # Input sequence length
     
-    # Training Parameters (OPTIMIZED FOR H100)
-    BATCH_SIZE = 2048                # Optimized: 4x larger (was 512)
-    BATCHES_PER_STEP = 1             # Optimized: No accumulation (was 4)
-    N_STEPS = 325_000                # Extended: 50 epochs (was 100K)
+    # Training Parameters (OPTIMIZED FOR A6000)
+    BATCH_SIZE = 512                 # Optimal for A6000 (tested fastest)
+    BATCHES_PER_STEP = 4             # Grad accum for effective batch 2048
+    N_STEPS = 100_000                # Match CT-EFT-20 baseline (was 325K)
     WARMUP_STEPS = 8_000             # IDENTICAL to CT-EFT-20
     
     # Learning Rate (IDENTICAL to CT-EFT-20)
@@ -109,10 +109,11 @@ class TransformerConfig:
     USE_AMP = True                   # Mixed precision
     PRECISION = 'bf16'               # BF16 for H100
     
-    # Data
-    NUM_WORKERS = 8
+    # Data (OPTIMIZED FOR A6000)
+    NUM_WORKERS = 8                  # Balanced for A6000
     PIN_MEMORY = True
-    PREFETCH_FACTOR = 2
+    PREFETCH_FACTOR = 2              # Moderate prefetching
+    PERSISTENT_WORKERS = False       # Standard worker lifecycle
     
     # Checkpointing
     SAVE_EVERY_N_STEPS = 5_000
@@ -122,10 +123,11 @@ class TransformerConfig:
     EARLY_STOPPING_PATIENCE = 10
     EARLY_STOPPING_MIN_DELTA = 0.001
     
-    # Paths
-    DATA_PATH = Path('dataset')
-    CHECKPOINT_DIR = Path('transformer_policy/checkpoints')
-    LOG_DIR = Path('transformer_policy/logs')
+    # Paths (absolute paths for running from anywhere)
+    BASE_DIR = Path(__file__).parent.parent.absolute()
+    DATA_PATH = BASE_DIR / 'dataset'
+    CHECKPOINT_DIR = BASE_DIR / 'transformer_policy' / 'checkpoints'
+    LOG_DIR = BASE_DIR / 'transformer_policy' / 'logs'
     
     # Device
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -163,10 +165,12 @@ class TransformerConfig:
         print(f"   Label smoothing:     {cls.LABEL_SMOOTHING}")
         print(f"   Workers:             {cls.NUM_WORKERS}")
         
-        print("\n⚡ H100 Optimizations:")
-        print(f"   Batch size:          {cls.BATCH_SIZE} (4x larger)")
+        print("\n⚡ A6000 Optimizations:")
+        print(f"   Batch size:          {cls.BATCH_SIZE}")
+        print(f"   Grad accumulation:   {cls.BATCHES_PER_STEP}")
+        print(f"   Effective batch:     {cls.BATCH_SIZE * cls.BATCHES_PER_STEP}")
         print(f"   Mixed precision:     {cls.PRECISION.upper()}")
-        print(f"   Expected speedup:    ~2x vs baseline")
+        print(f"   Expected speed:      ~0.50-0.55 steps/sec")
         
         # Calculate epochs
         dataset_size = 13_287_522
