@@ -87,3 +87,4 @@ python scripts/predict_move.py "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/R
 
 Then update `predict_move.py` to auto-download if checkpoint missing!
 
+

@@ -186,3 +186,4 @@ if __name__ == "__main__":
     print(f"Expected parameters: ~20M")
     print(f"Comparison: CNN has 17.8M params")
 
+
