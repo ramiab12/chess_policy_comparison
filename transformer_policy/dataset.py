@@ -42,8 +42,9 @@ class ChessDatasetFT(Dataset):
         # Open once to get metadata (will reopen per-worker)
         with h5py.File(h5_path, 'r', swmr=True) as f:
             self.encoded_table = f['encoded_data']
-            self.val_split_index = self.encoded_table.attrs['val_split_index']
             self.total_rows = len(self.encoded_table)
+            # Use 90/10 split for fair comparison (same as CNN)
+            self.val_split_index = int(self.total_rows * 0.9)
 
         # Create indices
         if split == "train":

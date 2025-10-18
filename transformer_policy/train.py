@@ -153,21 +153,28 @@ class Trainer:
             split='val'
         )
         
-        # Configure DataLoader (matching CNN setup)
+        # Configure DataLoader with aggressive optimizations
+        dataloader_kwargs = {
+            'batch_size': config.BATCH_SIZE,
+            'num_workers': config.NUM_WORKERS,
+            'pin_memory': config.PIN_MEMORY,
+        }
+        
+        # Add optional parameters if workers > 0
+        if config.NUM_WORKERS > 0:
+            dataloader_kwargs['prefetch_factor'] = config.PREFETCH_FACTOR
+            dataloader_kwargs['persistent_workers'] = config.PERSISTENT_WORKERS
+        
         self.train_loader = DataLoader(
             self.train_dataset,
-            batch_size=config.BATCH_SIZE,
             shuffle=True,
-            num_workers=config.NUM_WORKERS,
-            pin_memory=config.PIN_MEMORY
+            **dataloader_kwargs
         )
         
         self.val_loader = DataLoader(
             self.val_dataset,
-            batch_size=config.BATCH_SIZE,
             shuffle=False,
-            num_workers=config.NUM_WORKERS,
-            pin_memory=config.PIN_MEMORY
+            **dataloader_kwargs
         )
         
         print(f"   Train batches: {len(self.train_loader):,}")
@@ -184,6 +191,71 @@ class Trainer:
         self.best_step = 0
         self.start_time = time.time()
         self.recent_checkpoints = []
+        
+        # Try to resume from last checkpoint
+        self.resume_from_last_checkpoint()
+    
+    def resume_from_last_checkpoint(self):
+        """Resume training from the last checkpoint if it exists."""
+        import glob
+        
+        # Find all checkpoints
+        checkpoint_files = glob.glob(str(Config.CHECKPOINT_DIR / 'checkpoint_step_*.pth'))
+        
+        if not checkpoint_files:
+            print("\n   No checkpoint found, starting from scratch")
+            return
+        
+        # Sort by step number (not alphabetically!)
+        checkpoints = []
+        for ckpt in checkpoint_files:
+            step_num = int(ckpt.split('_step_')[1].split('.pth')[0])
+            checkpoints.append((step_num, ckpt))
+        checkpoints.sort(key=lambda x: x[0])
+        
+        # Get last checkpoint
+        step_number, last_checkpoint_path = checkpoints[-1]
+        
+        print(f"\n🔄 RESUMING from checkpoint: {Path(last_checkpoint_path).name}")
+        print(f"   Loading step {step_number:,}...")
+        
+        try:
+            checkpoint = torch.load(last_checkpoint_path, map_location=self.device)
+            
+            # Restore model state
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+            
+            # Restore optimizer state
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            
+            # Restore training state
+            self.current_step = checkpoint['step']
+            self.best_val_accuracy = checkpoint.get('best_val_accuracy', 0.0)
+            self.training_history = checkpoint.get('training_history', [])
+            self.best_step = checkpoint.get('best_step', self.current_step)
+            self.patience_counter = checkpoint.get('patience_counter', 0)
+            
+            # Load existing CSV to preserve history
+            csv_path = Config.LOG_DIR / 'training_log.csv'
+            if csv_path.exists():
+                import pandas as pd
+                df = pd.read_csv(csv_path)
+                self.training_history = df.to_dict('records')
+                print(f"   Loaded training history: {len(self.training_history)} validations")
+            
+            # Adjust start time (estimate based on elapsed hours from CSV)
+            if self.training_history:
+                last_elapsed = self.training_history[-1].get('elapsed_hours', 0)
+                self.start_time = time.time() - (last_elapsed * 3600)
+            
+            print(f"   ✅ Resumed from step {self.current_step:,}")
+            print(f"   Best accuracy so far: {self.best_val_accuracy:.2%}")
+            print(f"   Continuing training...")
+            
+        except Exception as e:
+            print(f"   ⚠️  Failed to load checkpoint: {e}")
+            print(f"   Starting from scratch instead")
+            self.current_step = 0
     
     def train_step(self) -> Tuple[float, float, float]:
         """
@@ -297,6 +369,8 @@ class Trainer:
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             'best_val_accuracy': self.best_val_accuracy,
+            'best_step': self.best_step,
+            'patience_counter': self.patience_counter,
             'training_history': self.training_history
         }
         
@@ -337,9 +411,15 @@ class Trainer:
     def train(self):
         """Main training loop (IDENTICAL procedure to CT-EFT-20)."""
         print("\n" + "=" * 70)
-        print("🚀 Starting Transformer Training (CT-EFT-20 Replica)")
+        if self.current_step > 0:
+            print(f"🔄 RESUMING Transformer Training from step {self.current_step:,}")
+        else:
+            print("🚀 Starting Transformer Training (CT-EFT-20 Replica)")
         print("=" * 70)
         print(f"\nTotal steps: {Config.N_STEPS:,}")
+        if self.current_step > 0:
+            print(f"Resuming from: {self.current_step:,}")
+            print(f"Remaining: {Config.N_STEPS - self.current_step:,}")
         print(f"Effective batch: {Config.BATCH_SIZE * Config.BATCHES_PER_STEP}")
         print()
         
@@ -349,9 +429,12 @@ class Trainer:
         step_times = []
         last_log_time = time.time()
         
+        # Determine start and end steps
+        start_step = self.current_step + 1 if self.current_step > 0 else 1
+        
         try:
-            with tqdm(total=Config.N_STEPS, desc="Training") as pbar:
-                for step in range(1, Config.N_STEPS + 1):
+            with tqdm(total=Config.N_STEPS, initial=self.current_step, desc="Training") as pbar:
+                for step in range(start_step, Config.N_STEPS + 1):
                     step_start = time.time()
                     self.current_step = step
                     

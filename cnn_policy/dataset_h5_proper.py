@@ -148,7 +148,7 @@ class ChessPolicyDatasetH5Proper(Dataset):
         Args:
             h5_path: Path to LE22ct.h5
             split: 'train' or 'val'
-            train_ratio: Train/val split ratio
+            train_ratio: Train/val split ratio (only used if H5 doesn't have val_split_index)
             augment: Data augmentation
         """
         self.h5_path = Path(h5_path)
@@ -171,9 +171,12 @@ class ChessPolicyDatasetH5Proper(Dataset):
         else:
             raise ValueError(f"'encoded_data' or 'encoded' table not found in H5 file! Available: {list(self.h5_file.keys())}")
         
-        # Determine split indices
+        # Determine split indices - USE EXACT 90/10 SPLIT!
         total_size = len(self.data)
-        split_idx = int(total_size * train_ratio)
+        
+        # Always use 90/10 split for fair comparison
+        split_idx = int(total_size * 0.9)
+        print(f"   Using 90/10 split: {split_idx:,} (90% train, 10% val)")
         
         if split == 'train':
             self.start_idx = 0

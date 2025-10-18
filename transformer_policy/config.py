@@ -90,9 +90,9 @@ class TransformerConfig:
     BOARD_STATUS_LENGTH = 70  # Input sequence length
     
     # Training Parameters (OPTIMIZED FOR A6000)
-    BATCH_SIZE = 512                 # Optimal for A6000 (tested fastest)
-    BATCHES_PER_STEP = 4             # Grad accum for effective batch 2048
-    N_STEPS = 100_000                # Match CT-EFT-20 baseline (was 325K)
+    BATCH_SIZE = 2048                # Optimal GPU batch size
+    BATCHES_PER_STEP = 1             # No grad accum needed with large batch
+    N_STEPS = 150_000                # Extended training (50% more than baseline)
     WARMUP_STEPS = 8_000             # IDENTICAL to CT-EFT-20
     
     # Learning Rate (IDENTICAL to CT-EFT-20)
@@ -109,11 +109,11 @@ class TransformerConfig:
     USE_AMP = True                   # Mixed precision
     PRECISION = 'bf16'               # BF16 for H100
     
-    # Data (OPTIMIZED FOR A6000)
-    NUM_WORKERS = 8                  # Balanced for A6000
+    # Data (OPTIMAL - Balanced for speed)
+    NUM_WORKERS = 24                 # OPTIMAL: Sweet spot for PyTorch data loading
     PIN_MEMORY = True
-    PREFETCH_FACTOR = 2              # Moderate prefetching
-    PERSISTENT_WORKERS = False       # Standard worker lifecycle
+    PREFETCH_FACTOR = 4              # OPTIMAL: Balanced prefetching
+    PERSISTENT_WORKERS = True        # Keep workers alive for speed
     
     # Checkpointing
     SAVE_EVERY_N_STEPS = 5_000
