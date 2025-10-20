@@ -1,0 +1,2 @@
+*.pth filter=lfs diff=lfs merge=lfs -text
+transformer_policy/checkpoints/*.pth filter=lfs diff=lfs merge=lfs -text

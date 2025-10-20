@@ -1,0 +1,25 @@
+# Chess Policy Comparison - CNN vs CT-EFT-20
+# Python 3.8+ required
+
+# Deep Learning
+torch>=2.0.0
+
+# Chess
+python-chess>=1.999
+chess>=1.10.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+h5py>=3.8.0
+
+# Training
+tensorboard>=2.13.0
+tqdm>=4.65.0
+
+# Evaluation
+requests>=2.31.0
+
+# For Transformer (CT-EFT-20 replica)
+tables>=3.8.0  # PyTables for H5 loading
+
