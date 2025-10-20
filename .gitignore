@@ -1,3 +1,5 @@
+# Created by: Rami Abu Mukh, Omar Gharra, Ameer Khalaily
+
 # Python
 __pycache__/
 *.py[cod]
@@ -7,15 +9,20 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+*.egg
+MANIFEST
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # Environment
 venv/
 env/
 ENV/
 .venv
+conda-env/
+.conda/
 
 # IDE
 .vscode/
@@ -23,28 +30,53 @@ ENV/
 *.swp
 *.swo
 *~
+.spyproject/
+.ropeproject/
 
-# Datasets (too large, exclude from git)
+# Datasets (too large for git)
 dataset/
+data/
 *.h5
 *.hdf5
+*.csv
+*.pgn
+*.zip
+*.tar
+*.tar.gz
 
-# Logs and intermediate outputs
+# Logs and TensorBoard
 logs/*/tensorboard/
+runs/
 *.log
 events.out.tfevents.*
+lightning_logs/
 
-# Training outputs (images)
+# Training outputs (images/plots)
 *.png
 *.jpg
 *.jpeg
 *.pdf
+*.svg
+
+# Model checkpoints (tracked with LFS, but ignore backup copies)
+*.pth.backup
+*.pt.backup
+*.ckpt.backup
 
 # OS
 .DS_Store
 Thumbs.db
 *.bak
+.Trash-*
 
 # Temporary files
 *.tmp
 *.temp
+*.swp
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/

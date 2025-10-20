@@ -1,25 +1,28 @@
+# Created by: Rami Abu Mukh, Omar Gharra, Ameer Khalaily
 # Chess Policy Comparison - CNN vs Transformer
 # Python 3.10+ required
 
 # Deep Learning
-torch>=2.0.0
+torch>=2.1.0
+torchvision>=0.16.0
 
 # Chess
 python-chess>=1.999
-chess>=1.10.0
 
 # Data Processing
 numpy>=1.24.0
 pandas>=2.0.0
-h5py>=3.8.0
+h5py>=3.9.0
+tables>=3.8.0  # PyTables for H5 dataset loading
 
-# Training
-tensorboard>=2.13.0
-tqdm>=4.65.0
+# Training & Monitoring
+tensorboard>=2.14.0
+tqdm>=4.66.0
 
-# Evaluation
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Utilities
+scipy>=1.11.0
 requests>=2.31.0
-
-# For H5 dataset loading
-tables>=3.8.0  # PyTables for H5 loading
-
