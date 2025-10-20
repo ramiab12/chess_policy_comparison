@@ -1,3 +1,5 @@
+# Created by: Rami Abu Mukh, Omar Gharra, Ameer Khalaily
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

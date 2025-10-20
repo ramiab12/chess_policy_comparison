@@ -1,5 +1,7 @@
 # Technical Documentation: Chess Policy Comparison
 
+**Created by: Rami Abu Mukh, Omar Gharra, Ameer Khalaily**
+
 **Project:** CNN vs Transformer Architecture Comparison for Chess Move Prediction  
 **Date:** 2025  
 **Framework:** PyTorch 2.x  

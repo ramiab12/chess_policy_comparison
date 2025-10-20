@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Created by: Rami Abu Mukh, Omar Gharra, Ameer Khalaily
 """
 Chess Move Predictor - Supports both CNN and Transformer models
 

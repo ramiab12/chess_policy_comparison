@@ -1,3 +1,5 @@
+# Created by: Rami Abu Mukh, Omar Gharra, Ameer Khalaily
+
 import torch
 from torch.utils.data import Dataset
 import h5py

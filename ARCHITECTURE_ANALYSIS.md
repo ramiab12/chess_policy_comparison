@@ -1,5 +1,7 @@
 # Architecture Deep Dive: CNN vs Transformer for Chess
 
+**Created by: Rami Abu Mukh, Omar Gharra, Ameer Khalaily**
+
 ## Overview
 
 After going through every line of code in both implementations, I want to lay out exactly what's different between these two approaches and why it matters for chess. This isn't just about "CNN vs Transformer" in the abstract – it's about two fundamentally different ways of *seeing* a chess position.

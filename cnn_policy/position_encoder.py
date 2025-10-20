@@ -1,3 +1,4 @@
+# Created by: Rami Abu Mukh, Omar Gharra, Ameer Khalaily
 """
 Position Encoder for CNN - as in AlphaZero paper 
 =========================

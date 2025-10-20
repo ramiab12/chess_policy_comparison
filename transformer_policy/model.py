@@ -1,3 +1,5 @@
+# Created by: Rami Abu Mukh, Omar Gharra, Ameer Khalaily
+
 import math
 import torch
 from torch import nn
