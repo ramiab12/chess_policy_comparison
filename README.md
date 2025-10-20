@@ -393,7 +393,6 @@ Full requirements in `requirements.txt`
 
 - **AlphaZero** (DeepMind, 2017): CNN-based policy and value networks
 - **"Attention is All You Need"** (Vaswani et al., 2017): Transformer architecture
-- **CT-EFT-20** (sgrvinod): Transformer for chess (baseline reference)
 
 ### Novel Contributions
 
@@ -415,7 +414,6 @@ This project is released under MIT License. See LICENSE file for details.
 - **Lichess.org** - Elite game database
 - **python-chess library** - Chess logic and utilities
 - **PyTorch team** - Deep learning framework
-- **sgrvinod** - Transformer architecture inspiration (CT-EFT-20)
 - **DeepMind AlphaZero team** - CNN architecture inspiration
 
 ---

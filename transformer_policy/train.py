@@ -304,7 +304,7 @@ class Trainer:
         if self.current_step > 0:
             print(f" RESUMING Transformer Training from step {self.current_step:,}")
         else:
-            print(" Starting Transformer Training (CT-EFT-20 Replica)")
+            print(" Starting Transformer Training")
         print("=" * 70)
         print(f"\nTotal steps: {Config.N_STEPS:,}")
         if self.current_step > 0:
