@@ -6,7 +6,7 @@
 
 ---
 
-## 📋 Project Overview
+##  Project Overview
 
 This project implements and compares two neural network architectures for chess move prediction:
 - **CNN-based policy network** (inspired by AlphaZero)
@@ -20,7 +20,7 @@ Both models are trained on the same dataset with identical hyperparameters to is
 
 ---
 
-## 🎯 Project Objectives
+##  Project Objectives
 
 ### Primary Objectives
 
@@ -49,7 +49,7 @@ Both models are trained on the same dataset with identical hyperparameters to is
 
 ---
 
-## 🏗️ Implementation Details
+##  Implementation Details
 
 ### Task Definition
 
@@ -135,7 +135,7 @@ Memory (BF16): 36.17 MB
 
 ---
 
-## 📊 Training Configuration
+##  Training Configuration
 
 ### Hyperparameters (Identical for Both Models)
 
@@ -184,7 +184,7 @@ Both models show:
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 chess_policy_comparison/
@@ -225,7 +225,7 @@ chess_policy_comparison/
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Installation
 
@@ -282,7 +282,7 @@ python predict_move.py --model cnn --checkpoint path/to/checkpoint.pth
 
 ---
 
-## 📖 Documentation
+##  Documentation
 
 ### Complete Documentation Files
 
@@ -313,7 +313,7 @@ python predict_move.py --model cnn --checkpoint path/to/checkpoint.pth
 
 ---
 
-## 🔬 Evaluation (Coming Soon)
+##  Evaluation (Coming Soon)
 
 ### Planned Evaluation Methods
 
@@ -344,7 +344,7 @@ python predict_move.py --model cnn --checkpoint path/to/checkpoint.pth
 
 ---
 
-## 🛠️ Requirements
+##  Requirements
 
 ```
 Python >= 3.10
@@ -362,7 +362,7 @@ Full requirements in `requirements.txt`
 
 ---
 
-## 📝 Key Implementation Features
+##  Key Implementation Features
 
 ### CNN-Specific
 - AlphaZero-style residual architecture
@@ -389,7 +389,7 @@ Full requirements in `requirements.txt`
 
 ---
 
-## 🎓 Research Context
+##  Research Context
 
 ### Inspiration
 
@@ -405,51 +405,19 @@ Full requirements in `requirements.txt`
 
 ---
 
-## 📜 License
+##  License
 
 This project is released under MIT License. See LICENSE file for details.
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **Lichess.org** - Elite game database
 - **python-chess library** - Chess logic and utilities
 - **PyTorch team** - Deep learning framework
 - **DeepMind AlphaZero team** - CNN architecture inspiration
 
----
-
-## 📧 Contact
-
-For questions, suggestions, or collaboration:
-- GitHub Issues: [Project Issues](https://github.com/yourusername/chess_policy_comparison/issues)
-- Project Repository: [github.com/yourusername/chess_policy_comparison](https://github.com/yourusername/chess_policy_comparison)
-
----
-
-## 📊 Current Status
-
-✅ **Completed:**
-- [x] CNN architecture implementation
-- [x] Transformer architecture implementation
-- [x] Training pipelines
-- [x] Dataset loading (LE22ct H5)
-- [x] Inference scripts
-- [x] Comprehensive documentation
-- [x] Training completed (55K steps each)
-- [x] Unified prediction interface
-
-🔄 **In Progress:**
-- [ ] Lichess bot deployment
-- [ ] Gameplay evaluation
-- [ ] Elo estimation
-- [ ] Tactical puzzle testing
-
-📅 **Upcoming:**
-- [ ] Final comparative analysis
-- [ ] Research paper/report
-- [ ] Additional visualizations
 - [ ] Extended documentation with results
 
 ---
