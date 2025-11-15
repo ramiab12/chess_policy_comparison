@@ -1,6 +1,6 @@
 # Chess Policy Comparison: CNN vs Transformer
 
-**Created by: Rami Abu Mukh, Omar Gharra, Ameer Khalaily**
+**Created by: Rami Abu Mukh, Omar Garah, Ameer Khalaily**
 
 **A controlled comparison of CNN and Transformer architectures for chess move prediction**
 
