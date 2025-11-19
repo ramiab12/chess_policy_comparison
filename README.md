@@ -418,9 +418,6 @@ This project is released under MIT License. See LICENSE file for details.
 - **PyTorch team** - Deep learning framework
 - **DeepMind AlphaZero team** - CNN architecture inspiration
 
-- [ ] Extended documentation with results
 
----
 
-**Last Updated:** January 2025
 
