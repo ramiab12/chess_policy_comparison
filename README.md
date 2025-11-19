@@ -313,7 +313,7 @@ python predict_move.py --model cnn --checkpoint path/to/checkpoint.pth
 
 ---
 
-##  Evaluation (Coming Soon)
+##  Evaluation
 
 ### Planned Evaluation Methods
 
